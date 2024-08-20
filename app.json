@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "scheme": "acme",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "infoPlist": {
+      "UIViewControllerBasedStatusBarAppearance": true
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-9717273868571983~9596846191",
+          "iosAppId": "ca-app-pub-9717273868571983~9596846191"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "name": "Trips",
+    "slug": "trips",
+    "android": {
+      "package": "com.bengaudry.trips"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-9717273868571983~9596846191"
+      },
+      "bundleIdentifier": "com.bengaudry.trips"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "a915c942-bda7-4526-b929-3f85eb71ed44"
+      }
+    }
+  }
+}
