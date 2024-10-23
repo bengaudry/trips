@@ -19,7 +19,7 @@ export default function TabsLayout() {
         }}
       />
       <Stack.Screen
-        name="addtrip"
+        name="addtrip/[tripId]"
         options={{
           title: "Nouveau",
           presentation: "modal",
@@ -39,9 +39,8 @@ export default function TabsLayout() {
           presentation: "modal",
           headerShown: true,
           headerLeft: (props) => {
-            const { navigate } = useRouter();
             return (
-              <Link href="../" style={{ paddingVertical: 8, paddingRight: 8}}>
+              <Link href="../" style={{ paddingVertical: 8, paddingRight: 8 }}>
                 <Text
                   style={{
                     color: props.tintColor,
@@ -59,7 +58,12 @@ export default function TabsLayout() {
         name="trips"
         options={{
           title: "Trajets",
-          headerTitle: () => null,
+        }}
+      />
+      <Stack.Screen
+        name="tripDetails/[tripId]"
+        options={{
+          title: "Details",
         }}
       />
     </Stack>

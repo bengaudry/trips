@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks";
 import { Text } from "./themed";
 import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 
 function groupTripsByDate(trips: Trip[]): Record<string, Trip[]> {
   const groupedTrips: Record<string, Trip[]> = {};
@@ -82,14 +83,17 @@ export function RepeatTripIcon({
 
   return (
     <View
-      style={[{
-        flexDirection: "row",
-        width: 48,
-        justifyContent: "center",
-        alignItems: "center",
-        borderRightWidth: 1.5,
-        borderColor: border,
-      }, style]}
+      style={[
+        {
+          flexDirection: "row",
+          width: 48,
+          justifyContent: "center",
+          alignItems: "center",
+          borderRightWidth: 1.5,
+          borderColor: border,
+        },
+        style,
+      ]}
     >
       <Ionicons
         name={
@@ -179,6 +183,10 @@ export function TripDisplayer({
         style,
       ]}
       onPress={() => navigate(`/tripDetails/${id}`)}
+      onLongPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        navigate(`/addtrip/${id}`);
+      }}
     >
       <View
         style={{

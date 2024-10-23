@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
+//import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
 
 import { getCurrentUserTrips } from "@/api/trips";
 import { AddTripButtons, CTA, Text, Title, TripDisplayer } from "@/components";
@@ -154,6 +154,67 @@ const Stats = ({
   );
 };
 
+const Progression = ({
+  trips,
+  totalDistance,
+}: {
+  trips: Trip[] | null;
+  totalDistance: number;
+}) => {
+  const { subtleBackground, shadow, accent, secondaryTextColor } = useColors();
+  const calculatePercent = () => Math.round((totalDistance * 100) / 3000);
+
+  return (
+    <View
+      style={{
+        backgroundColor: subtleBackground,
+        borderRadius: 12,
+        padding: 24,
+        marginBottom: 16,
+        gap: 16,
+        shadowColor: shadow,
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        shadowOffset: { height: 4, width: 0 },
+      }}
+    >
+      <Title>Progression</Title>
+      <Text>Vous avez conduit {trips ? totalDistance : "-"} km / 3000 km</Text>
+      <View
+        style={{
+          width: "100%",
+          height: 6,
+          backgroundColor: `${accent}20`,
+          borderRadius: 999,
+          marginBottom: 15,
+        }}
+      >
+        <View
+          style={{
+            width: `${calculatePercent()}%`,
+            height: "100%",
+            backgroundColor: accent,
+            borderRadius: 999,
+          }}
+        >
+          <Text
+            style={{
+              position: "absolute",
+              width: 50,
+              top: 6,
+              right: calculatePercent() > 10 ? 0 : "auto",
+              left: calculatePercent() > 10 ? "auto" : 0,
+              textAlign: calculatePercent() > 10 ? "right" : "left",
+            }}
+          >
+            {calculatePercent()}%
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
 function RecentTrips({ trips }: { trips: Trip[] | null }) {
   const { accent } = useColors();
 
@@ -245,10 +306,12 @@ export default function Home() {
         <RefreshControl refreshing={loading} onRefresh={fetchTrips} />
         <Header navigate={navigate} user={user} />
 
-        {!__DEV__ && <BannerAd
+        {/* {!__DEV__ && <BannerAd
           size={BannerAdSize.INLINE_ADAPTIVE_BANNER}
           unitId="ca-app-pub-9717273868571983/1718356174ù"
-        />}
+        />} */}
+
+        <Progression trips={trips} totalDistance={getTotalTripsDistance()} />
 
         <Stats
           trips={trips}
@@ -257,7 +320,7 @@ export default function Home() {
         />
         <CTA
           content={__DEV__ ? "Suivre mon trajet" : "Ajouter un trajet"}
-          onPress={() => navigate(__DEV__ ? "/autoadd" : "/addtrip")}
+          onPress={() => navigate(__DEV__ ? "/autoadd" : "/addtrip/null")}
         />
         <RecentTrips trips={trips ? trips.slice(0, 5) : null} />
       </ScrollView>

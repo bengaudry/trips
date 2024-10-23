@@ -8,7 +8,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth, useColors } from "@/hooks";
@@ -16,7 +16,7 @@ import {
   calculateDistanceBetweenCoords,
   fetchCityCoords,
 } from "@/api/matrixDistances";
-import { addTripToDatabase } from "@/api/trips";
+import { addTripToDatabase, editTrip, getTripDetails } from "@/api/trips";
 import {
   InputContainer,
   TextInput,
@@ -146,29 +146,27 @@ function LocationsInputs({
 type Page1Data = {
   from: string;
   to: string;
-  distance: number;
-  duration: number;
+  distance: number | undefined;
+  duration: number | undefined;
   repeatTrip: number;
   date: Date;
 };
 
-function Page1({ onChange }: { onChange: (data?: Page1Data) => void }) {
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [distance, setDistance] = useState<number>();
-  const [duration, setDuration] = useState<number>();
-  const [repeatTrip, setRepeatTrip] = useState(1);
-  const [date, setDate] = useState<Date>(new Date());
-
+function Page1({
+  onChange,
+  value,
+}: {
+  onChange: (data: Page1Data) => void;
+  value: Page1Data;
+}) {
   const [durationUnit, setDurationUnit] = useState<"h" | "m">("h");
 
-  useEffect(() => {
-    if (!distance || distance <= 0 || !duration || duration <= 0)
-      return onChange(undefined);
-    onChange({ from, to, distance, duration, repeatTrip, date });
-  }, [from, to, distance, duration, repeatTrip, date]);
+  // useEffect(() => {
+  //   onChange({ from, to, distance ?? 0, duration: duration ?? 0, repeatTrip, date });
+  // }, [from, to, distance, duration, repeatTrip, date]);
 
   const autoFillDurationAndLength = async () => {
+    const { from, to, distance, duration } = value;
     if (!from || from.length < 3) return;
     if (!to || to.length < 3) return;
     if (from === to) return;
@@ -184,58 +182,63 @@ function Page1({ onChange }: { onChange: (data?: Page1Data) => void }) {
 
       console.log(`Distance: ${res.distance.toFixed(2)} km`);
       console.log(`Duration: ${res.duration.toFixed(2)} hours`);
-      setDistance(res.distance);
-      setDuration(res.duration);
+      onChange({ ...value, distance: res.distance, duration: res.duration });
     } catch (err) {
       return;
     }
   };
 
   useEffect(() => {
-    if (!duration) return;
-    if (duration >= 60) return setDurationUnit("h");
+    if (!value.duration) return;
+    if (value.duration >= 60) return setDurationUnit("h");
     setDurationUnit("m");
-  }, [duration]);
+  }, [value.duration]);
 
   const handleChangeDuration = (txt: string) => {
     const nb = parseInt(txt);
-    const value = isNaN(nb) ? undefined : nb;
-    const convertedValue = value
+    const nbVal = isNaN(nb) ? undefined : nb;
+    const duration = nbVal
       ? durationUnit === "h"
-        ? value * 60
-        : value
+        ? nbVal * 60
+        : nbVal
       : undefined;
 
-    setDuration(convertedValue);
+    onChange({ ...value, duration });
   };
 
   useEffect(() => {
-    if (from.length === 0 && to.length === 0) {
-      setDuration(undefined);
-      setDistance(undefined);
+    if (value.from.length === 0 && value.to.length === 0) {
+      onChange({ ...value, distance: undefined, duration: undefined });
     }
-  }, [from, to]);
+  }, [value.from, value.to]);
+
   return (
     <>
       <InputContainer>
         <LocationsInputs
-          from={from}
-          to={to}
-          onChangeFrom={setFrom}
-          onChangeTo={setTo}
+          from={value.from}
+          to={value.to}
+          onChangeFrom={(from) => onChange({ ...value, from })}
+          onChangeTo={(to) => onChange({ ...value, to })}
           onBlur={autoFillDurationAndLength}
         />
 
-        <DateInput date={date} onChange={setDate} />
+        <DateInput
+          date={value.date}
+          onChange={(date) => onChange({ ...value, date })}
+        />
 
         <InputContainer horizontal>
           <TextInput
             label="Longueur"
             keyboardType="number-pad"
             placeholder="15km"
-            value={distance?.toString()}
+            value={value.distance?.toString()}
             onChangeText={(txt) =>
-              setDistance(isNaN(parseInt(txt)) ? undefined : parseInt(txt))
+              onChange({
+                ...value,
+                distance: isNaN(parseInt(txt)) ? undefined : parseInt(txt),
+              })
             }
             style={{ flexGrow: 3 }}
           />
@@ -244,10 +247,10 @@ function Page1({ onChange }: { onChange: (data?: Page1Data) => void }) {
             keyboardType="number-pad"
             placeholder="25min"
             value={
-              duration
+              value.duration
                 ? (durationUnit === "h"
-                    ? Math.round(duration / 60)
-                    : duration
+                    ? Math.round(value.duration / 60)
+                    : value.duration
                   ).toString()
                 : undefined
             }
@@ -275,8 +278,8 @@ function Page1({ onChange }: { onChange: (data?: Page1Data) => void }) {
             },
             { label: "Aller retour", value: 2, icon: "code" },
           ]}
-          value={repeatTrip}
-          onChange={setRepeatTrip}
+          value={value.repeatTrip}
+          onChange={(repeatTrip) => onChange({ ...value, repeatTrip })}
         />
       </InputContainer>
     </>
@@ -285,20 +288,18 @@ function Page1({ onChange }: { onChange: (data?: Page1Data) => void }) {
 
 type Page2Data = TripMetadata;
 
-function Page2({ onChange }: { onChange: (data?: Page2Data) => void }) {
-  const [weathers, setWeathers] = useState<Weather[]>([]);
-  const [roadTypes, setRoadTypes] = useState<RoadType[]>([]);
-  const [maneuvers, setManeuvers] = useState<Maneuver[]>([]);
-  const [comments, setComments] = useState("");
-
-  useEffect(() => {
-    onChange({ weathers, roadTypes, maneuvers, comments });
-  }, [weathers, roadTypes, maneuvers, comments]);
-
+function Page2({
+  value,
+  onChange,
+}: {
+  value: Page2Data;
+  onChange: (data: Page2Data) => void;
+}) {
   return (
     <>
       <MultiSelector<Weather>
         label="Météo"
+        defaultValues={value.weathers}
         items={[
           {
             label: "Ensoleillé",
@@ -326,10 +327,11 @@ function Page2({ onChange }: { onChange: (data?: Page2Data) => void }) {
             icon: "snow-outline",
           },
         ]}
-        onChange={setWeathers}
+        onChange={(weathers) => onChange({ ...value, weathers })}
       />
       <MultiSelector<RoadType>
         label="Types de voies"
+        defaultValues={value.roadTypes}
         items={[
           {
             label: "Ville",
@@ -352,10 +354,11 @@ function Page2({ onChange }: { onChange: (data?: Page2Data) => void }) {
             icon: "car-sport-outline",
           },
         ]}
-        onChange={setRoadTypes}
+        onChange={(roadTypes) => onChange({ ...value, roadTypes })}
       />
       <MultiSelector<Maneuver>
         label="Manoeuvres réalisées"
+        defaultValues={value.maneuvers}
         items={[
           {
             label: "Marche arrière",
@@ -383,13 +386,13 @@ function Page2({ onChange }: { onChange: (data?: Page2Data) => void }) {
             icon: "car-sport-outline",
           },
         ]}
-        onChange={setManeuvers}
+        onChange={(maneuvers) => onChange({ ...value, maneuvers })}
       />
       <TextInput
         label="Commentaires"
         multiline
-        value={comments}
-        onChangeText={setComments}
+        value={value.comments}
+        onChangeText={(comments) => onChange({ ...value, comments })}
         placeholder="Écris-ici les commentaires éventuels que tu souhaite garder après ce trajet"
       />
     </>
@@ -397,24 +400,43 @@ function Page2({ onChange }: { onChange: (data?: Page2Data) => void }) {
 }
 
 export default function AddTripPage() {
+  const { tripId } = useLocalSearchParams<{ tripId: string }>();
+  const editTripMode: boolean = tripId !== undefined && tripId !== "null";
   const { user } = useAuth();
   const { navigate } = useRouter();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
 
-  const [page1Data, setPage1Data] = useState<Page1Data>();
-  const [page2Data, setPage2Data] = useState<Page2Data>();
+  const [page1Data, setPage1Data] = useState<Page1Data>({
+    from: "",
+    to: "",
+    date: new Date(),
+    distance: undefined,
+    duration: undefined,
+    repeatTrip: 1,
+  });
+  const [page2Data, setPage2Data] = useState<Page2Data>({
+    comments: "",
+    maneuvers: [],
+    roadTypes: [],
+    weathers: [],
+  });
 
   const handleAddTripToDb = async () => {
     try {
       if (!user || !page1Data) return;
       setLoading(true);
-      await addTripToDatabase({
-        uid: user.uid,
-        ...page1Data,
-        metadata: page2Data,
-      });
+      if (editTripMode) {
+        // @ts-expect-error
+        await editTrip(tripId, { ...page1Data, metadata: page2Data });
+      } else {
+        await addTripToDatabase({
+          uid: user.uid,
+          ...page1Data,
+          metadata: page2Data,
+        });
+      }
       navigate("/home");
     } catch (err) {
       console.error(err);
@@ -422,6 +444,29 @@ export default function AddTripPage() {
       setLoading(false);
     }
   };
+
+  // Fetch trip details if user is editing a trip and autofills the inputs
+  const fetchTrip = async () => {
+    if (editTripMode) {
+      try {
+        // fetch trip data from database and update page1Data and page2Data
+        // @ts-expect-error
+        const trip = await getTripDetails(tripId);
+        if (!trip) return navigate("/home");
+        console.log(trip);
+        setPage1Data({
+          ...trip,
+        });
+        if (trip.metadata) setPage2Data(trip.metadata);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchTrip();
+  }, [tripId]);
 
   return (
     <SafeAreaView>
@@ -432,20 +477,28 @@ export default function AddTripPage() {
           contentContainerStyle={styles.ScrollViewContent}
         >
           <View>
-            <Title heading="screen">Ajouter un trajet</Title>
+            <Title heading="screen">
+              {editTripMode ? "Modifier" : "Ajouter"} un trajet
+            </Title>
             {step === 1 ? (
-              <Page1 onChange={setPage1Data} />
+              <Page1 value={page1Data} onChange={setPage1Data} />
             ) : (
               <>
                 <BackButton onPress={() => setStep(1)} />
-                <Page2 onChange={setPage2Data} />
+                <Page2 value={page2Data} onChange={setPage2Data} />
               </>
             )}
           </View>
 
-          <View>
+          <View
+            style={{
+              marginTop: 32,
+            }}
+          >
             <CTA
-              content={step === 1 ? "Suivant" : "Ajouter"}
+              content={
+                step === 1 ? "Suivant" : editTripMode ? "Modifier" : "Ajouter"
+              }
               disabled={!page1Data}
               loading={loading}
               onPress={() => {

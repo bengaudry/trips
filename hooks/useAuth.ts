@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, onIdTokenChanged, type User } from "firebase/auth";
+import { onAuthStateChanged, onIdTokenChanged, updateCurrentUser, updateProfile, type User } from "firebase/auth";
 
 import { getFirebaseAuth } from "@/firebase";
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<(User & { isPremium: boolean }) | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const handleUser = (user: User | null) => {
-    setUser(user);
+    setUser({ ...user, isPremium: false });
     setLoading(false);
   };
 

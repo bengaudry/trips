@@ -118,7 +118,7 @@ export function AddTripButtons() {
   });
 
   const togglePopup = () => {
-    if (!__DEV__) return navigate("/addtrip");
+    if (!__DEV__) return navigate("/addtrip/null");
     setPopupOpened((prev) => !prev);
     crossRotation.value = withTiming(popupOpened ? 0 : 45, config);
     shadowOpacity.value = withTiming(popupOpened ? 0 : 1, config);
@@ -145,7 +145,7 @@ export function AddTripButtons() {
           offset={1}
         />
         <AddLink
-          href="/addtrip"
+          href="/addtrip/null"
           title="Ajouter manuellement"
           visible={popupOpened}
         />
@@ -157,7 +157,7 @@ export function AddTripButtons() {
           if (!__DEV__) return;
           if (popupOpened) return;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-          navigate("/addtrip");
+          navigate("/addtrip/null");
         }}
         style={[
           {

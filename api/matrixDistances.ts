@@ -1,3 +1,5 @@
+import { LatLng } from "react-native-maps";
+
 // Fonction pour géocoder une ville et obtenir ses coordonnées
 export async function fetchCityCoords(location: string) {
   const API_KEY = process.env.EXPO_PUBLIC_OPENROUTE_APIKEY;
@@ -6,7 +8,8 @@ export async function fetchCityCoords(location: string) {
   const response = await fetch(url);
   const data = await response.json();
   if (data.features.length > 0) {
-    return data.features[0].geometry.coordinates;
+    const coords = data.features[0].geometry.coordinates;
+    return { latitude: coords[1], longitude: coords[0] } as LatLng;
   } else {
     throw new Error(`Could not geocode location: ${location}`);
   }

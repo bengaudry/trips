@@ -10,6 +10,7 @@ import {
   Timestamp,
   where,
   deleteDoc,
+  updateDoc,
 } from "firebase/firestore";
 
 export function isTripCorrect(trip: any) {
@@ -47,6 +48,15 @@ export async function addTripToDatabase(trip: any | TripWithoutId) {
     ...data,
   });
   return doc.id;
+}
+
+export async function editTrip(tripId: string, trip: TripWithoutId) {
+  const { date, ...data } = trip;
+  const docRef = doc(getFirebaseDb(), "trips", tripId)
+  await updateDoc(docRef, {
+    date: Timestamp.fromDate(new Date(date)),
+    ...data,
+  });
 }
 
 export async function getCurrentUserTrips(): Promise<Trip[] | null> {
@@ -87,24 +97,22 @@ export async function getCurrentUserTrips(): Promise<Trip[] | null> {
 }
 
 export async function getTripDetails(tripId: string) {
-  try {
-    const docRef = doc(getFirebaseDb(), "trips", tripId);
-    const docSnap = await getDoc(docRef);
+  const docRef = doc(getFirebaseDb(), "trips", tripId);
+  const docSnap = await getDoc(docRef);
 
-    if (!docSnap.exists()) throw new Error("Trip does not exist");
+  if (!docSnap.exists()) throw new Error("Trip does not exist");
 
-    const data = docSnap.data();
-    const tripWithoutId = isFirebaseTripCorrect(data);
-    if (!tripWithoutId) return;
+  const data = docSnap.data();
+  const tripWithoutId = isFirebaseTripCorrect(data);
+  if (!tripWithoutId) return;
 
-    const { date, ...tripData } = tripWithoutId;
+  const { date, ...tripData } = tripWithoutId;
 
-    return {
-      id: docSnap.id,
-      date: new Date(date.seconds * 1000),
-      ...tripData,
-    } as Trip;
-  } catch (err) {}
+  return {
+    id: docSnap.id,
+    date: new Date(date.seconds * 1000),
+    ...tripData,
+  } as Trip;
 }
 
 export async function deleteTrip(tripId: string) {
